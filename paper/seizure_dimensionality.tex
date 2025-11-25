@@ -246,6 +246,41 @@ Logistic regression classification of pre-ictal vs.\ interictal using dimensiona
 
 This moderate performance reflects the challenge: pre-ictal is not ``obviously abnormal'' in simple metrics. The discriminative information is in the \textit{variance reduction}, which requires tracking metrics over time rather than classifying individual windows.
 
+\subsection{Robustness: Non-Overlapping Windows}
+
+Our analysis used overlapping windows (10s duration, 1s step), introducing autocorrelation that inflates effective sample size. To address this, we repeated key analyses using only non-overlapping windows (every 10th window), yielding $n = 12,175$ interictal and $n = 984$ pre-ictal independent samples.
+
+Results remain highly significant:
+\begin{itemize}
+    \item $\Dpr$: interictal = 5.05, pre-ictal = 5.69, $p = 1.5 \times 10^{-28}$
+    \item $\lambda_1$: interictal = 0.395, pre-ictal = 0.327, $p = 1.5 \times 10^{-50}$
+    \item Variance ratios: 4.8$\times$ ($\Dpr$), 6.7$\times$ ($\lambda_1$), Levene $p < 10^{-99}$
+\end{itemize}
+
+The effect is robust to autocorrelation correction.
+
+\subsection{Transition Zone Gradient}
+
+We analyzed the previously excluded 30--60 minute window to test for a gradient approaching seizure:
+
+\begin{table}[h]
+\centering
+\caption{Transition zone: metrics show gradient approaching seizure.}
+\label{tab:gradient}
+\begin{tabular}{lcccc}
+\toprule
+Time (min) & $n$ & $\Dpr$ mean & $\Dpr$ var & $\lambda_1$ mean \\
+\midrule
+$-60$ to $-45$ & 12,222 & 4.92 & 2.78 & 0.400 \\
+$-45$ to $-30$ & 39,594 & 5.10 & 2.87 & 0.388 \\
+$-30$ to $-15$ & 171,062 & 5.09 & 2.81 & 0.387 \\
+$-15$ to $0$ & 234,422 & 5.18 & 2.84 & 0.381 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The pattern shows progressive increase in $\Dpr$ and decrease in $\lambda_1$ as seizure approaches, consistent with increasing network coordination before collapse.
+
 \subsection{Temporal Dynamics}
 
 Figure~\ref{fig:timecourse} shows dimensional metrics aligned to seizure onset across all 7 seizures. The pattern varies by seizure but consistently shows:
@@ -399,7 +434,7 @@ The author thanks the creators of the CHB-MIT database for making their data pub
 \section*{Data and Code Availability}
 %==============================================================================
 
-All analysis code is available at: \url{https://github.com/[repository]}
+All analysis code is available at: \url{https://github.com/todd866/seizure-dynamics}
 
 The CHB-MIT database is available at: \url{https://physionet.org/content/chbmit/1.0.0/}
 
