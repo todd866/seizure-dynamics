@@ -239,12 +239,18 @@ Effect sizes are large to very large ($|d| > 0.8$ for all metrics). The eigenval
 
 \subsection{Classification Performance}
 
-Logistic regression classification of pre-ictal vs.\ interictal using dimensional features achieved:
+Logistic regression classification of pre-ictal vs.\ interictal using single-window dimensional features achieved modest performance:
 \begin{itemize}
-    \item AUC = $0.68 \pm 0.05$ (5-fold CV)
+    \item Baseline (single-window): AUC = $0.68 \pm 0.05$
 \end{itemize}
 
-This moderate performance reflects the challenge: pre-ictal is not ``obviously abnormal'' in simple metrics. The discriminative information is in the \textit{variance reduction}, which requires tracking metrics over time rather than classifying individual windows.
+However, adding temporal variance features (``Brain Rate Variability'') dramatically improves classification:
+\begin{itemize}
+    \item With BRV features: AUC = $0.83 \pm 0.14$
+    \item BRV features only: AUC = $0.82 \pm 0.19$
+\end{itemize}
+
+The variance features alone (BRV$_{\Dpr}$ and BRV$_{\lambda_1}$ computed over 5-minute windows) achieve higher AUC than the raw metrics, confirming that the discriminative information lies in \textit{variance reduction} rather than mean shifts. This validates the ``Brain Rate Variability'' concept: tracking how much the system wanders is more informative than tracking where it is.
 
 \subsection{Robustness: Non-Overlapping Windows}
 
