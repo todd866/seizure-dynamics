@@ -1,0 +1,24 @@
+# Core scientific computing
+numpy>=1.24.0
+scipy>=1.10.0
+pandas>=2.0.0
+
+# EEG processing
+mne>=1.4.0
+pyedflib>=0.1.30
+
+# Machine learning
+scikit-learn>=1.2.0
+
+# Visualization
+matplotlib>=3.7.0
+seaborn>=0.12.0
+
+# State-space models
+pykalman>=0.9.5
+
+# Data download
+wfdb>=4.1.0  # PhysioNet/CHB-MIT access
+
+# Progress bars
+tqdm>=4.65.0

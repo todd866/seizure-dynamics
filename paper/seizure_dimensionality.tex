@@ -1,0 +1,410 @@
+\documentclass[11pt,letterpaper]{article}
+
+% Packages
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{natbib}
+\usepackage[margin=1in]{geometry}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{float}
+
+% Custom commands
+\newcommand{\Deff}{D_{\text{eff}}}
+\newcommand{\Dpr}{D_{\text{PR}}}
+\newcommand{\Kth}[1]{K_{#1}}
+
+% Title
+\title{\textbf{Seizure as Critical Transition:\\Dimensional Signatures of Approaching Collapse in EEG}}
+
+\author{
+Ian Todd\\
+\textit{Sydney Medical School, University of Sydney}\\
+\texttt{itod2305@uni.sydney.edu.au}
+}
+
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Seizures represent a critical phase transition in neural dynamics---from the flexible, multi-scale activity of healthy brain states to the hypersynchronous collapse of ictal discharge. We propose that the approach to seizure follows the signature pattern of critical transitions: \textbf{increasing coordination with decreasing variability}. Using the CHB-MIT scalp EEG database (subject chb01: 42 recordings, 7 seizures, 131,584 analysis windows), we show that pre-ictal periods exhibit (1) \textit{higher} participation ratio $\Dpr$ than interictal baseline (5.69 vs.\ 5.05, $p < 10^{-270}$), indicating more coordinated oscillatory modes, but (2) dramatically \textit{reduced} variance (4.9$\times$ reduction in $\Dpr$ variance, 7.0$\times$ in $\lambda_1$ variance), indicating the system has settled into a more stereotyped attractor. The ictal state then shows collapse: lower $\Dpr$ (5.04), steeper eigenvalue slope ($-3.19$ vs.\ $-2.76$), and fewer components required for variance thresholds ($\Kth{95} = 9.4$ vs.\ 10.6). This pattern---organization preceding collapse---mirrors critical phenomena in physics, where correlation length diverges before phase transitions. We propose that ``brain rate variability'' (the variance of dimensional metrics over time) may be a more sensitive seizure warning than the metrics themselves, analogous to how loss of heart rate variability predicts cardiac events. Classification of pre-ictal vs.\ interictal windows achieves AUC = 0.68 using dimensional features alone.
+\end{abstract}
+
+\textbf{Keywords:} seizure prediction, critical transition, EEG complexity, effective dimensionality, participation ratio, neural criticality
+
+%==============================================================================
+\section{Introduction}
+%==============================================================================
+
+\subsection{The Clinical Problem}
+
+Epilepsy affects approximately 50 million people worldwide, with roughly one-third of patients experiencing seizures that remain uncontrolled despite medication \citep{who2019epilepsy}. The unpredictability of seizures is often more disabling than the seizures themselves---patients cannot drive, swim alone, or live without constant vigilance. A reliable early warning system would transform quality of life.
+
+Decades of research have sought EEG biomarkers that predict seizures minutes to hours in advance. While many features show statistical differences between interictal (between-seizure) and pre-ictal (before-seizure) periods, clinical translation has been limited \citep{mormann2007seizure,kuhlmann2018seizure}. We argue this reflects a conceptual gap: most approaches seek features that \textit{decrease} before seizures, assuming pre-ictal states are ``simpler'' or ``more pathological.'' Our data suggest the opposite pattern.
+
+\subsection{The Critical Transition Hypothesis}
+
+Critical phase transitions in physical systems exhibit a characteristic signature: \textbf{increasing correlation with decreasing fluctuation}. As a system approaches a critical point:
+\begin{itemize}
+    \item Correlation length increases---distant parts of the system become more coordinated
+    \item Fluctuations around the mean decrease---the system settles into a more stereotyped state
+    \item Then the transition occurs---an avalanche, a phase change, a collapse
+\end{itemize}
+
+We propose that seizure follows this pattern:
+
+\begin{quote}
+\textbf{Seizure is a critical transition.} The pre-ictal state is not ``simpler'' than interictal---it is \textit{more organized}. Neural oscillators that normally operate semi-independently become increasingly coordinated. The system settles into a narrower attractor with reduced variability. This organization is the buildup; seizure is the avalanche.
+\end{quote}
+
+This reframes the warning signs. The signature of impending seizure is not ``things getting simpler'' but ``things getting too organized''---more coordination, less wandering, reduced variability in complexity metrics themselves.
+
+\subsection{Effective Dimensionality as a Window into Criticality}
+
+We operationalize ``coordination'' through the eigenvalue spectrum of the EEG channel covariance matrix. The participation ratio $\Dpr$ measures how many independent modes contribute to the signal:
+\begin{equation}
+\Dpr = \frac{\left(\sum_i \lambda_i\right)^2}{\sum_i \lambda_i^2}
+\end{equation}
+
+Counterintuitively, \textit{higher} $\Dpr$ can indicate \textit{more} coordination---when previously independent oscillators begin to synchronize, they form coherent modes that become visible in the covariance structure. The key insight is that we must track not just $\Dpr$ itself, but its \textbf{variance over time}:
+\begin{itemize}
+    \item High $\Dpr$ with high variance: healthy exploration of a large state space
+    \item High $\Dpr$ with low variance: pathological organization, locked into a coherent attractor
+    \item Low $\Dpr$ with low variance: collapse---the seizure itself
+\end{itemize}
+
+\subsection{Relation to Prior Work}
+
+The ``criticality hypothesis'' in neuroscience proposes that healthy brain dynamics operate near a critical point, balancing order and disorder \citep{beggs2003neuronal,shew2013functional}. Our contribution is to show that the \textit{approach} to seizure exhibits the temporal signature of critical transitions: increasing coordination followed by collapse.
+
+This also extends our broader ``coherence compute'' framework \citep{todd2025coherence}, which proposes that biological intelligence operates through high-dimensional continuous dynamics with discrete codes emerging at bottlenecks. Seizure, in this view, is \textit{uncontrolled} dimensional collapse---the system crossing a critical threshold globally rather than at regulated bottlenecks.
+
+\subsection{Paper Structure}
+
+Section~\ref{sec:methods} describes our dimensional profile metrics and analysis pipeline. Section~\ref{sec:results} presents results from the CHB-MIT database. Section~\ref{sec:theory} develops the theoretical framework connecting seizure to critical transitions. Section~\ref{sec:discussion} discusses clinical implications and limitations.
+
+
+%==============================================================================
+\section{Methods}
+\label{sec:methods}
+%==============================================================================
+
+\subsection{Data: CHB-MIT Scalp EEG Database}
+
+We analyzed subject chb01 from the CHB-MIT Scalp EEG Database \citep{shoeb2010application}, which contains continuous scalp EEG recordings from pediatric patients with intractable epilepsy:
+\begin{itemize}
+    \item 23 channels (International 10-20 bipolar montage)
+    \item 256 Hz sampling rate
+    \item 42 recordings totaling approximately 40 hours
+    \item 7 expert-annotated seizures
+\end{itemize}
+
+\subsection{Window Classification}
+
+For each recording, we defined temporal windows relative to seizures:
+\begin{itemize}
+    \item \textbf{Interictal}: Windows $>$1 hour from any seizure onset or offset
+    \item \textbf{Pre-ictal}: Windows 0--30 minutes before seizure onset
+    \item \textbf{Ictal}: Windows during annotated seizures
+    \item \textbf{Postictal}: Windows 0--5 minutes after seizure offset
+    \item \textbf{Excluded}: Windows 30--60 minutes before seizure (transition zone)
+\end{itemize}
+
+\subsection{Preprocessing}
+
+Raw EEG was bandpass filtered (1--45 Hz, 4th-order Butterworth) to remove DC drift and high-frequency noise while preserving physiologically relevant oscillations (delta through low gamma). Data were segmented into 10-second windows with 1-second steps, yielding 131,584 analysis windows.
+
+\subsection{Dimensional Profile Metrics}
+
+For each window, we computed the channel covariance matrix $\mathbf{C} = \mathbf{X}^\top \mathbf{X} / (n-1)$ where $\mathbf{X}$ is the $T \times N$ matrix of filtered EEG (T timepoints, N channels). We extracted the eigenvalue spectrum $\lambda_1 \geq \lambda_2 \geq \cdots \geq \lambda_N$ and computed:
+
+\subsubsection{Participation Ratio ($\Dpr$)}
+\begin{equation}
+\Dpr = \frac{\left(\sum_i \lambda_i\right)^2}{\sum_i \lambda_i^2}
+\end{equation}
+Measures the effective number of contributing modes. Range: 1 (single dominant mode) to $N$ (all modes equal).
+
+\subsubsection{Variance Threshold Components ($\Kth{\theta}$)}
+\begin{equation}
+\Kth{\theta} = \min \left\{ k : \frac{\sum_{i=1}^{k} \lambda_i}{\sum_{i=1}^{N} \lambda_i} \geq \theta \right\}
+\end{equation}
+Minimum components to explain $\theta$\% of variance. We report $\Kth{80}$, $\Kth{90}$, $\Kth{95}$, $\Kth{99}$.
+
+\subsubsection{Spectral Slope}
+We fit $\log \lambda_i = \alpha - \beta \log i$ and report $\beta$ (more negative = steeper falloff).
+
+\subsubsection{Dominant Mode Fraction ($\lambda_1$)}
+\begin{equation}
+f_1 = \lambda_1 / \sum_i \lambda_i
+\end{equation}
+Fraction of variance in the first principal component.
+
+\subsection{Statistical Analysis}
+
+We compared metrics across window classes using Welch's t-test (unequal variances) and computed Cohen's $d$ effect sizes. Variance differences were tested with Levene's test. Classification used logistic regression with balanced class weights, evaluated via 5-fold cross-validation AUC.
+
+
+%==============================================================================
+\section{Results}
+\label{sec:results}
+%==============================================================================
+
+\subsection{The Paradox: Pre-ictal Shows Higher, Not Lower, Dimensionality}
+
+Table~\ref{tab:metrics} presents dimensional profile metrics by window class. The key finding is counterintuitive: \textbf{pre-ictal periods show \textit{higher} participation ratio than interictal baseline}, not lower.
+
+\begin{table}[h]
+\centering
+\caption{Dimensional profile metrics by window class (mean $\pm$ SD). Pre-ictal shows higher $\Dpr$ but dramatically lower variance than interictal. Ictal shows collapse.}
+\label{tab:metrics}
+\begin{tabular}{lcccc}
+\toprule
+Metric & Interictal & Pre-ictal & Ictal & Effect size $d$ \\
+ & ($n = 121,748$) & ($n = 9,836$) & ($n = 449$) & (pre vs.\ inter) \\
+\midrule
+$\Dpr$ & $5.05 \pm 1.80$ & $5.69 \pm 0.81$ & $5.04 \pm 0.75$ & $+0.37$ \\
+$\Kth{95}$ & $10.53 \pm 1.44$ & $10.57 \pm 0.68$ & $9.36 \pm 0.95$ & $+0.02$ \\
+$\Kth{99}$ & $15.27 \pm 1.00$ & $15.24 \pm 0.56$ & $14.12 \pm 0.85$ & $-0.03$ \\
+Slope $\beta$ & $-2.77 \pm 0.20$ & $-2.76 \pm 0.14$ & $-3.19 \pm 0.13$ & $+0.03$ \\
+$\lambda_1$ & $0.395 \pm 0.141$ & $0.326 \pm 0.053$ & $0.343 \pm 0.048$ & $-0.50$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+All comparisons between interictal and pre-ictal are statistically significant ($p < 0.01$) given the large sample sizes, but the pattern is what matters:
+\begin{itemize}
+    \item $\Dpr$ is \textit{higher} in pre-ictal ($d = +0.37$)
+    \item $\lambda_1$ (dominant mode fraction) is \textit{lower} in pre-ictal ($d = -0.50$)
+    \item $\Kth{95}$ and slope are essentially unchanged
+\end{itemize}
+
+This initially seems to contradict a ``collapse'' hypothesis. But the variance tells the real story.
+
+\subsection{The Key Finding: Variance Reduction}
+
+Table~\ref{tab:variance} shows the dramatic reduction in metric variance from interictal to pre-ictal.
+
+\begin{table}[h]
+\centering
+\caption{Variance reduction from interictal to pre-ictal. The system becomes dramatically more stereotyped before seizure.}
+\label{tab:variance}
+\begin{tabular}{lccc}
+\toprule
+Metric & Interictal Var & Pre-ictal Var & Reduction \\
+\midrule
+$\Dpr$ & 3.23 & 0.66 & $4.9\times$ \\
+$\lambda_1$ & 0.0199 & 0.0028 & $7.0\times$ \\
+$\Kth{95}$ & 2.07 & 0.46 & $4.5\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+All variance comparisons are highly significant (Levene's test $p < 10^{-100}$). The interpretation:
+\begin{itemize}
+    \item \textbf{Interictal}: The system wanders through a large state space. Sometimes $\Dpr$ is high (many coordinated modes), sometimes low (few active modes). High variance reflects healthy exploration.
+    \item \textbf{Pre-ictal}: The system locks into an organized attractor. $\Dpr$ is consistently elevated---\textit{more} modes are coordinated---but with little variation. The system has stopped exploring.
+    \item \textbf{Ictal}: Collapse. $\Dpr$ drops, slope steepens dramatically ($-3.19$ vs.\ $-2.76$), $\Kth{95}$ decreases. All variance concentrated in hypersynchronous modes.
+\end{itemize}
+
+\subsection{The Ictal Collapse}
+
+The transition from pre-ictal to ictal shows unambiguous collapse (Table~\ref{tab:ictal}):
+
+\begin{table}[h]
+\centering
+\caption{Pre-ictal to ictal transition: dimensional collapse.}
+\label{tab:ictal}
+\begin{tabular}{lccc}
+\toprule
+Metric & Pre-ictal & Ictal & Effect size $d$ \\
+\midrule
+$\Dpr$ & 5.69 & 5.04 & $-0.81$ \\
+$\Kth{80}$ & 5.69 & 4.77 & $-1.54$ \\
+$\Kth{95}$ & 10.57 & 9.36 & $-1.74$ \\
+$\Kth{99}$ & 15.24 & 14.12 & $-1.95$ \\
+Slope $\beta$ & $-2.76$ & $-3.19$ & $-3.08$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Effect sizes are large to very large ($|d| > 0.8$ for all metrics). The eigenvalue spectrum steepens dramatically (slope effect size $d = -3.08$), indicating variance concentrating into fewer modes---the signature of hypersynchronous collapse.
+
+\subsection{Classification Performance}
+
+Logistic regression classification of pre-ictal vs.\ interictal using dimensional features achieved:
+\begin{itemize}
+    \item AUC = $0.68 \pm 0.05$ (5-fold CV)
+\end{itemize}
+
+This moderate performance reflects the challenge: pre-ictal is not ``obviously abnormal'' in simple metrics. The discriminative information is in the \textit{variance reduction}, which requires tracking metrics over time rather than classifying individual windows.
+
+\subsection{Temporal Dynamics}
+
+Figure~\ref{fig:timecourse} shows dimensional metrics aligned to seizure onset across all 7 seizures. The pattern varies by seizure but consistently shows:
+\begin{itemize}
+    \item Elevated, stable $\Dpr$ in the 30--60 minutes before seizure
+    \item Sharp drop at seizure onset
+    \item Recovery in postictal period
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/fig5_chb01_seizure_aligned.pdf}
+\caption{\textbf{Seizure-aligned dimensional dynamics.} Mean $\pm$ SD of dimensional metrics across 7 seizures, aligned to onset (red dashed line). Note the stable, elevated $\Dpr$ before seizure followed by sharp drop at onset.}
+\label{fig:timecourse}
+\end{figure}
+
+
+%==============================================================================
+\section{Theoretical Framework}
+\label{sec:theory}
+%==============================================================================
+
+\subsection{Critical Transitions in Physical Systems}
+
+Critical phase transitions exhibit universal signatures \citep{scheffer2009early}:
+\begin{enumerate}
+    \item \textbf{Critical slowing down}: The system takes longer to recover from perturbations
+    \item \textbf{Increased autocorrelation}: States become more persistent
+    \item \textbf{Increased variance} (in some systems) or \textbf{decreased variance} (in systems approaching a fixed point)
+    \item \textbf{Flickering}: Occasional excursions toward the alternative state
+\end{enumerate}
+
+Our data suggest that pre-ictal dynamics exhibit a specific pattern: \textbf{increased coordination (higher $\Dpr$) with decreased variability (lower variance)}. This is consistent with approach to a \textit{fixed point} or narrow attractor---the system settles into an organized state before the catastrophic transition.
+
+\subsection{The Sandpile Analogy}
+
+Consider a sandpile approaching criticality:
+\begin{itemize}
+    \item \textbf{Subcritical}: Sand grains land randomly, local avalanches occur, the pile has variable local slopes
+    \item \textbf{Near-critical}: The pile steepens. Local regions become coordinated---a grain added here affects grains there. The slope becomes more uniform (lower variance) but steeper (more organized)
+    \item \textbf{Critical}: Avalanche. A single grain triggers global collapse
+\end{itemize}
+
+The analogy to seizure:
+\begin{itemize}
+    \item \textbf{Interictal}: Neural oscillators operate semi-independently. Some are synchronized, some not. High variability in coordination metrics.
+    \item \textbf{Pre-ictal}: Oscillators become increasingly coupled. More coordinated activity (higher $\Dpr$) but locked into a stereotyped pattern (lower variance). The system is ``steepening.''
+    \item \textbf{Ictal}: Global synchronization. All variance collapses into hypersynchronous discharge. The avalanche.
+\end{itemize}
+
+\subsection{Why Higher $\Dpr$ Can Indicate Pathology}
+
+The participation ratio counts ``effective dimensions''---how many modes contribute substantially to variance. Counterintuitively, \textit{more} coordinated activity can produce \textit{higher} $\Dpr$:
+
+\begin{itemize}
+    \item In healthy interictal states, some brain regions are active (high eigenvalues) while others are quiet (low eigenvalues). The eigenvalue spectrum is heterogeneous.
+    \item In pre-ictal states, previously quiet regions become entrained. More oscillators contribute to the covariance structure. The spectrum becomes more uniform---\textit{more} modes above threshold.
+    \item In ictal states, all regions lock to one pattern. The spectrum collapses to a single dominant mode.
+\end{itemize}
+
+The trajectory is: heterogeneous $\to$ uniformly coordinated $\to$ collapsed.
+
+\subsection{Brain Rate Variability}
+
+Heart rate variability (HRV) predicts cardiac events because \textit{reduced variability} indicates loss of adaptive flexibility \citep{malik1996heart}. A healthy heart varies its rate in response to demands; a failing heart locks into a narrow pattern.
+
+We propose an analogous ``brain rate variability'' (BRV): the variance of dimensional metrics over time. Our data suggest:
+\begin{itemize}
+    \item High BRV (high variance in $\Dpr$, $\lambda_1$, etc.) indicates healthy exploration
+    \item Low BRV indicates the system has locked into an attractor---a warning sign
+    \item The specific attractor matters less than the loss of flexibility
+\end{itemize}
+
+This reframes seizure prediction: track not just ``is $\Dpr$ high or low?'' but ``has $\Dpr$ variance dropped?'' The 5--7$\times$ variance reduction we observe is a stronger signal than the modest shift in means.
+
+\subsection{Connection to Coherence Compute}
+
+In our broader framework \citep{todd2025coherence}, biological intelligence operates through high-dimensional continuous dynamics with discrete codes emerging at dimensional bottlenecks. Effective dimensionality $\Deff$ is modulated by oscillatory control (beta/gamma balance).
+
+Seizure, in this view, is \textit{uncontrolled} critical transition:
+\begin{itemize}
+    \item Normal cognition involves controlled dimensional reduction at specific bottlenecks (attention, memory encoding, motor output)
+    \item Seizure involves \textit{global} loss of dimensional control
+    \item The pre-ictal buildup is the system approaching criticality network-wide
+    \item The ictal discharge is the avalanche
+\end{itemize}
+
+
+%==============================================================================
+\section{Discussion}
+\label{sec:discussion}
+%==============================================================================
+
+\subsection{Clinical Implications}
+
+\textbf{Reframing prediction targets:} Rather than seeking metrics that are ``abnormal'' in pre-ictal periods, we should track \textit{variability reduction}. A patient whose $\Dpr$ variance drops by 50\% over an hour may be approaching seizure even if the mean $\Dpr$ is unremarkable.
+
+\textbf{Closed-loop intervention:} Current responsive neurostimulation devices (e.g., NeuroPace RNS) trigger on ictal patterns. Earlier intervention---triggered by variance reduction---might abort seizures during the ``steepening'' phase before the avalanche begins.
+
+\textbf{Multi-timescale monitoring:} Short-term variance (minutes) may predict imminent seizures. Long-term variance (days) may indicate overall seizure susceptibility or medication efficacy.
+
+\subsection{Relation to Existing Literature}
+
+Our findings connect to several established lines of research:
+
+\textbf{Critical brain hypothesis:} The brain is proposed to operate near criticality for optimal information processing \citep{beggs2003neuronal,shew2013functional}. Our data suggest that seizure represents departure from healthy criticality---not ``too much chaos'' but ``too much order.''
+
+\textbf{Entropy measures:} Studies using sample entropy, permutation entropy, and multiscale entropy often find \textit{decreased} complexity before seizures \citep{gao2015multiscale}. This is consistent with our variance reduction finding: both reflect the system locking into a stereotyped state.
+
+\textbf{Synchronization measures:} Increased phase synchronization before seizures is well-documented \citep{mormann2007seizure}. Our $\Dpr$ increase is consistent---more synchronized oscillators produce more coherent modes in the covariance spectrum.
+
+\subsection{Limitations}
+
+\textbf{Single subject:} We analyzed one patient (chb01) in depth. While the findings are statistically robust (n $>$ 130,000 windows), replication across subjects is essential. Patient heterogeneity in epilepsy syndromes may affect generalizability.
+
+\textbf{Scalp EEG resolution:} Scalp recordings are spatial mixtures of cortical sources. The eigenvalue spectrum reflects this mixture, not the true cortical geometry. Intracranial recordings would provide cleaner estimates.
+
+\textbf{Pre-ictal definition:} We defined pre-ictal as 0--30 minutes before seizure. The optimal window may vary by patient and seizure type. The 30--60 minute ``transition zone'' we excluded deserves further study.
+
+\textbf{Classification performance:} AUC = 0.68 is moderate. This reflects the challenge that pre-ictal states are not obviously abnormal window-by-window. The discriminative information is in temporal patterns (variance reduction) that require tracking over time.
+
+\subsection{Future Directions}
+
+\textbf{Multi-subject validation:} Extend analysis to all 24 CHB-MIT subjects and to adult cohorts (e.g., TUH EEG corpus).
+
+\textbf{Variance-based prediction:} Develop algorithms that explicitly track variance reduction as a warning signal, not just metric values.
+
+\textbf{Intracranial validation:} Test whether the criticality pattern is visible in local field potentials from implanted electrodes.
+
+\textbf{Stress/inflammation integration:} Combine EEG dimensional variance with HRV and inflammatory markers for multi-modal seizure risk prediction.
+
+
+%==============================================================================
+\section{Conclusion}
+%==============================================================================
+
+We have shown that the approach to seizure exhibits the signature of a critical transition: \textbf{increasing coordination with decreasing variability}. Pre-ictal periods show elevated participation ratio (more coordinated modes) but dramatically reduced variance (the system locked into an organized attractor). Ictal discharge is the collapse---eigenvalue spectra steepening, variance concentrating into hypersynchronous modes.
+
+This reframes seizure prediction. The warning sign is not ``the brain getting simpler'' but ``the brain getting too organized''---loss of the healthy variability that indicates flexible, adaptive dynamics. Tracking ``brain rate variability'' (variance in dimensional metrics over time) may provide earlier warning than tracking the metrics themselves.
+
+More broadly, this connects clinical epileptology to the physics of critical transitions. Seizure is not merely hyperexcitability but a phase transition---the neural equivalent of an avalanche in a system that has steepened beyond the critical point. Understanding seizure as criticality may open new approaches to prediction, intervention, and treatment.
+
+
+%==============================================================================
+\section*{Acknowledgments}
+%==============================================================================
+
+The author thanks the creators of the CHB-MIT database for making their data publicly available. This work was conducted independently without institutional funding.
+
+%==============================================================================
+\section*{Data and Code Availability}
+%==============================================================================
+
+All analysis code is available at: \url{https://github.com/[repository]}
+
+The CHB-MIT database is available at: \url{https://physionet.org/content/chbmit/1.0.0/}
+
+
+\bibliographystyle{plainnat}
+\bibliography{references}
+
+\end{document}
