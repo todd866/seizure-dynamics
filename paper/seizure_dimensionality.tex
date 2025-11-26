@@ -67,14 +67,25 @@ We propose that seizure follows this pattern:
 
 This reframes the warning signs. The signature of impending seizure is not ``things getting simpler'' but ``things getting too organized''---more coordination, less wandering, reduced variability in complexity metrics themselves.
 
-\subsection{Effective Dimensionality as a Window into Criticality}
+\subsection{What is ``Dimensionality'' in EEG?}
 
-We operationalize ``coordination'' through the eigenvalue spectrum of the EEG channel covariance matrix. The participation ratio $\Dpr$ measures how many independent modes contribute to the signal:
+Scalp EEG records voltage fluctuations from 20--256 electrodes. But these channels are not independent---nearby electrodes pick up overlapping sources, and distant regions often synchronize. The question is: \textit{how many independent patterns of activity are actually present?}
+
+Consider an analogy: an orchestra has 100 musicians, but during a unison passage, there is effectively one ``mode'' of activity. During a complex fugue, there might be four independent voices. The \textbf{effective dimensionality} counts how many independent patterns contribute to the signal, regardless of how many sensors record it.
+
+Mathematically, we compute the covariance matrix of the EEG channels and decompose it into eigenvalues $\lambda_1 \geq \lambda_2 \geq \ldots \geq \lambda_n$. Each eigenvalue represents the variance explained by one spatial pattern (eigenvector). If all variance concentrates in one mode ($\lambda_1$ dominates), the signal is effectively one-dimensional---all channels are doing the same thing. If variance spreads across many modes, the signal is high-dimensional---multiple independent patterns coexist.
+
+The \textbf{participation ratio} $\Dpr$ summarizes this:
 \begin{equation}
 \Dpr = \frac{\left(\sum_i \lambda_i\right)^2}{\sum_i \lambda_i^2}
 \end{equation}
+This equals $n$ if all eigenvalues are equal (maximum dimensionality) and approaches 1 if one eigenvalue dominates (minimum dimensionality). For 23-channel EEG, $\Dpr$ typically ranges from 3--10 depending on brain state.
 
-Counterintuitively, \textit{higher} $\Dpr$ can indicate \textit{more} coordination---when previously independent oscillators begin to synchronize, they form coherent modes that become visible in the covariance structure. The key insight is that we must track not just $\Dpr$ itself, but its \textbf{variance over time}:
+\subsection{Why Dimensionality Might Change Before Seizures}
+
+Prior work has found that various ``complexity'' measures decrease before seizures---entropy drops, predictability increases, synchronization rises \citep{mormann2007seizure,lehnertz2017capturing}. The intuition is that the brain becomes ``simpler'' or ``more organized'' before the hypersynchronous discharge.
+
+We hypothesized that effective dimensionality would follow the same pattern: fewer independent modes as the brain locks into a pre-seizure state. But the relationship turns out to be more subtle. The key insight is that we must track not just $\Dpr$ itself, but its \textbf{variance over time}:
 \begin{itemize}
     \item High $\Dpr$ with high variance: healthy exploration of a large state space
     \item High $\Dpr$ with low variance: pathological organization, locked into a coherent attractor
@@ -157,7 +168,7 @@ We compared metrics across window classes using Welch's t-test (unequal variance
 \label{sec:results}
 %==============================================================================
 
-\subsection{The Paradox: Pre-ictal Shows Higher, Not Lower, Dimensionality}
+\subsection{The Surprise: Pre-ictal Dimensionality is Higher, Not Lower}
 
 Table~\ref{tab:metrics} presents dimensional profile metrics by window class. The key finding is counterintuitive: \textbf{pre-ictal periods show \textit{higher} participation ratio than interictal baseline}, not lower.
 
