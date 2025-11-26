@@ -71,15 +71,34 @@ This reframes the warning signs. The signature of impending seizure is not ``thi
 
 Scalp EEG records voltage fluctuations from 20--256 electrodes. But these channels are not independent---nearby electrodes pick up overlapping sources, and distant regions often synchronize. The question is: \textit{how many independent patterns of activity are actually present?}
 
-Consider an analogy: an orchestra has 100 musicians, but during a unison passage, there is effectively one ``mode'' of activity. During a complex fugue, there might be four independent voices. The \textbf{effective dimensionality} counts how many independent patterns contribute to the signal, regardless of how many sensors record it.
+\textbf{The orchestra analogy.} Consider an orchestra with 100 musicians. How many ``dimensions'' of activity are there? It depends on what they're playing:
 
-Mathematically, we compute the covariance matrix of the EEG channels and decompose it into eigenvalues $\lambda_1 \geq \lambda_2 \geq \ldots \geq \lambda_n$. Each eigenvalue represents the variance explained by one spatial pattern (eigenvector). If all variance concentrates in one mode ($\lambda_1$ dominates), the signal is effectively one-dimensional---all channels are doing the same thing. If variance spreads across many modes, the signal is high-dimensional---multiple independent patterns coexist.
+\begin{itemize}
+    \item \textbf{Unison passage}: All 100 musicians play the same note. Despite 100 instruments, there is effectively \textit{one} dimension---one pattern of activity replicated across many sources.
 
-The \textbf{participation ratio} $\Dpr$ summarizes this:
+    \item \textbf{Four-part fugue}: The orchestra splits into soprano, alto, tenor, bass voices. Now there are \textit{four} independent patterns, even though 100 musicians are still playing.
+
+    \item \textbf{Warm-up cacophony}: Each musician plays independently---scales, fragments, tuning. This is \textit{high-dimensional}: many independent patterns coexisting.
+\end{itemize}
+
+The key insight is that dimensionality measures \textit{independence}, not quantity. We hire 100 musicians precisely \textit{because} we want the capacity for rich, varied sound---not to have them all do the same thing. Each violin can produce different timbres; each section can carry its own melodic line; the full orchestra can generate complex harmonies impossible for a single instrument.
+
+\textbf{Why high dimensionality is healthy.} A healthy brain, like a functioning orchestra, maintains high effective dimensionality: different regions can do different things, respond to different inputs, carry different information. The visual cortex processes images while the motor cortex plans movement while the prefrontal cortex maintains goals. This \textit{functional diversity} requires high dimensionality.
+
+\textbf{When dimensionality collapses.} But sometimes an orchestra locks into unison---a dramatic climax where all instruments hammer the same chord. This is low-dimensional: powerful, but inflexible. The brain equivalent is a seizure: all neurons firing together in hypersynchronous discharge. The rich, varied activity collapses into a single overwhelming pattern.
+
+\textbf{The math.} We formalize this by computing the covariance matrix of the EEG channels and decomposing it into eigenvalues $\lambda_1 \geq \lambda_2 \geq \ldots \geq \lambda_n$. Each eigenvalue represents the variance explained by one spatial pattern (eigenvector):
+
+\begin{itemize}
+    \item If all variance concentrates in one mode ($\lambda_1$ dominates), the signal is effectively one-dimensional---all channels are doing the same thing (unison).
+    \item If variance spreads across many modes (many $\lambda_i$ are similar), the signal is high-dimensional---multiple independent patterns coexist (fugue or cacophony).
+\end{itemize}
+
+The \textbf{participation ratio} $\Dpr$ summarizes this in a single number:
 \begin{equation}
 \Dpr = \frac{\left(\sum_i \lambda_i\right)^2}{\sum_i \lambda_i^2}
 \end{equation}
-This equals $n$ if all eigenvalues are equal (maximum dimensionality) and approaches 1 if one eigenvalue dominates (minimum dimensionality). For 23-channel EEG, $\Dpr$ typically ranges from 3--10 depending on brain state.
+This equals $n$ (maximum) if all eigenvalues are equal, and approaches 1 (minimum) if one eigenvalue dominates. For 23-channel EEG, $\Dpr$ typically ranges from 3--10 depending on brain state.
 
 \subsection{Why Dimensionality Might Change Before Seizures}
 
@@ -135,28 +154,36 @@ Raw EEG was bandpass filtered (1--45 Hz, 4th-order Butterworth) to remove DC dri
 
 \subsection{Dimensional Profile Metrics}
 
-For each window, we computed the channel covariance matrix $\mathbf{C} = \mathbf{X}^\top \mathbf{X} / (n-1)$ where $\mathbf{X}$ is the $T \times N$ matrix of filtered EEG (T timepoints, N channels). We extracted the eigenvalue spectrum $\lambda_1 \geq \lambda_2 \geq \cdots \geq \lambda_N$ and computed:
+For each 10-second window, we asked: ``How is the variance distributed across spatial patterns?'' This is analogous to asking an orchestra: ``How many independent voices are active right now?''
+
+\textbf{Step 1: Compute covariance.} We computed the channel covariance matrix $\mathbf{C} = \mathbf{X}^\top \mathbf{X} / (n-1)$ where $\mathbf{X}$ is the $T \times N$ matrix of filtered EEG (T timepoints, N = 23 channels). The covariance matrix captures which channels tend to fluctuate together.
+
+\textbf{Step 2: Find the eigenvalues.} We decomposed $\mathbf{C}$ into eigenvalues $\lambda_1 \geq \lambda_2 \geq \cdots \geq \lambda_N$. Each eigenvalue represents the variance captured by one independent spatial pattern. Large $\lambda_1$ means most variance is in one pattern (the orchestra playing in unison); more equal eigenvalues mean multiple independent patterns (the fugue).
+
+\textbf{Step 3: Summarize the spectrum.} We computed four complementary metrics:
 
 \subsubsection{Participation Ratio ($\Dpr$)}
 \begin{equation}
 \Dpr = \frac{\left(\sum_i \lambda_i\right)^2}{\sum_i \lambda_i^2}
 \end{equation}
-Measures the effective number of contributing modes. Range: 1 (single dominant mode) to $N$ (all modes equal).
+\textit{Intuition:} ``How many modes are really contributing?'' If one eigenvalue dominates, $\Dpr \approx 1$. If all are equal, $\Dpr = N$. For our 23-channel EEG, typical values range from 3 (very synchronized) to 10 (diverse activity).
 
 \subsubsection{Variance Threshold Components ($\Kth{\theta}$)}
 \begin{equation}
 \Kth{\theta} = \min \left\{ k : \frac{\sum_{i=1}^{k} \lambda_i}{\sum_{i=1}^{N} \lambda_i} \geq \theta \right\}
 \end{equation}
-Minimum components to explain $\theta$\% of variance. We report $\Kth{80}$, $\Kth{90}$, $\Kth{95}$, $\Kth{99}$.
+\textit{Intuition:} ``How many modes do we need to capture most of the action?'' $\Kth{95} = 10$ means the top 10 modes explain 95\% of variance. Lower $\Kth{\theta}$ indicates more concentrated (lower-dimensional) activity.
 
-\subsubsection{Spectral Slope}
-We fit $\log \lambda_i = \alpha - \beta \log i$ and report $\beta$ (more negative = steeper falloff).
+\subsubsection{Spectral Slope ($\beta$)}
+We fit $\log \lambda_i = \alpha - \beta \log i$.
+
+\textit{Intuition:} ``How steeply does the spectrum fall off?'' More negative $\beta$ means variance is more concentrated in the top modes. A steep slope ($\beta = -3$) indicates dominance by few patterns; a shallow slope ($\beta = -2$) indicates more distributed activity.
 
 \subsubsection{Dominant Mode Fraction ($\lambda_1$)}
 \begin{equation}
 f_1 = \lambda_1 / \sum_i \lambda_i
 \end{equation}
-Fraction of variance in the first principal component.
+\textit{Intuition:} ``What fraction of the signal is the single loudest pattern?'' High $f_1$ (e.g., 0.5) means half the variance is in one mode---the orchestra is mostly playing one thing. Low $f_1$ (e.g., 0.2) means the dominant pattern is just one voice among several.
 
 \subsection{Statistical Analysis}
 
